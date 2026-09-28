@@ -40,8 +40,7 @@
 #include "osr/types.h"
 #include "osr/ways.h"
 
-//copy of CCH_dijkstra_astarbidir_test.cc with cch 
-
+// copy of CCH_dijkstra_astarbidir_test.cc with cch
 
 namespace fs = std::filesystem;
 using namespace osr;
@@ -63,11 +62,11 @@ void cch_load(std::string_view raw_data, std::string_view data_dir) {
 
 template <Profile P>
 void cch_run(ways const& w,
-         lookup const& l,
-         unsigned const n_samples,
-         unsigned const max_cost,
-         direction const dir,
-         search_profile const profile) {
+             lookup const& l,
+             unsigned const n_samples,
+             unsigned const max_cost,
+             direction const dir,
+             search_profile const profile) {
 
   auto const from_tos = [&]() {
     auto prng = std::mt19937{};
@@ -86,7 +85,8 @@ void cch_run(ways const& w,
 
   auto reference_times = std::vector<std::chrono::steady_clock::duration>{};
   auto experiment_times = std::vector<std::chrono::steady_clock::duration>{};
-  auto cch_experiment_times = std::vector<std::chrono::steady_clock::duration>();
+  auto cch_experiment_times =
+      std::vector<std::chrono::steady_clock::duration>();
 
   auto m = std::mutex{};
 
@@ -104,7 +104,6 @@ void cch_run(ways const& w,
             return wc.left_.node_ != n && wc.right_.node_ != n;
           });
           if (matches.size() > 1) {
-
           }
           return matches;
         };
@@ -121,9 +120,9 @@ void cch_run(ways const& w,
     auto const reference_start = std::chrono::steady_clock::now();
     auto const reference = [&]() {
       try {
-        return route(typename P::parameters{}, w, l, profile, from_loc,
-                     to_loc, from_matches_span, to_matches_span, max_cost, dir,
-                     nullptr, nullptr, nullptr, routing_algorithm::kDijkstra);
+        return route(typename P::parameters{}, w, l, profile, from_loc, to_loc,
+                     from_matches_span, to_matches_span, max_cost, dir, nullptr,
+                     nullptr, nullptr, routing_algorithm::kDijkstra);
       } catch (std::exception const& ex) {
         fmt::println("dijkstra exception: {}", ex.what());
         throw ex;
@@ -135,9 +134,9 @@ void cch_run(ways const& w,
     auto const experiment_start = std::chrono::steady_clock::now();
     auto const experiment = [&]() {
       try {
-        return route(typename P::parameters{}, w, l, profile, from_loc,
-                     to_loc, from_matches_span, to_matches_span, max_cost, dir,
-                     nullptr, nullptr, nullptr, routing_algorithm::kAStarBi);
+        return route(typename P::parameters{}, w, l, profile, from_loc, to_loc,
+                     from_matches_span, to_matches_span, max_cost, dir, nullptr,
+                     nullptr, nullptr, routing_algorithm::kAStarBi);
       } catch (std::exception const& ex) {
         fmt::println("a* bidir exception: {}", ex.what());
         throw ex;
@@ -145,7 +144,7 @@ void cch_run(ways const& w,
     }();
     auto const experiment_time =
         std::chrono::steady_clock::now() - experiment_start;
-    
+
     /*
     cch
     */
@@ -153,9 +152,9 @@ void cch_run(ways const& w,
     auto const cch_experiment_start = std::chrono::steady_clock::now();
     auto const cch_experiment = [&]() {
       try {
-        return route(typename P::parameters{}, w, l, profile, from_loc,
-                     to_loc, from_matches_span, to_matches_span, max_cost, dir,
-                     nullptr, nullptr, nullptr, routing_algorithm::kCCH);
+        return route(typename P::parameters{}, w, l, profile, from_loc, to_loc,
+                     from_matches_span, to_matches_span, max_cost, dir, nullptr,
+                     nullptr, nullptr, routing_algorithm::kCCH);
       } catch (std::exception const& ex) {
         fmt::println("CCH exception: {}", ex.what());
         throw ex;
@@ -164,37 +163,46 @@ void cch_run(ways const& w,
     auto const cch_experiment_time =
         std::chrono::steady_clock::now() - cch_experiment_start;
 
-    auto astar_pass =
-     (reference.has_value() == experiment.has_value() && (!reference || !experiment || (reference->cost_ == experiment->cost_ )));
-         
-    auto cch_pass = 
-    (reference.has_value() == cch_experiment.has_value() && (!reference || !cch_experiment || (reference->cost_ == cch_experiment->cost_)));
+    auto astar_pass = (reference.has_value() == experiment.has_value() &&
+                       (!reference || !experiment ||
+                        (reference->cost_ == experiment->cost_)));
 
-    if(astar_pass){ ++n_congruent_astar; }
-    if(cch_pass){ ++n_congruent_cch; }
+    auto cch_pass = (reference.has_value() == cch_experiment.has_value() &&
+                     (!reference || !cch_experiment ||
+                      (reference->cost_ == cch_experiment->cost_)));
 
-    if(!astar_pass || !cch_pass){
+    if (astar_pass) {
+      ++n_congruent_astar;
+    }
+    if (cch_pass) {
+      ++n_congruent_cch;
+    }
+
+    if (!astar_pass || !cch_pass) {
       auto const print_result = [&](std::string_view name, auto const& p,
                                     auto const& t) {
-          fmt::println(
-              "{:10}: {:11} --> {:11} | {} | time: "
-              "{}:{:0>3}:{:0>3} s",
-              name, w.node_to_osm_[from_node], w.node_to_osm_[to_node],
-              p ? fmt::format("cost: {:5} | dist: {:>10.2f}", p->cost_, p->dist_)
-                : "no result",
-              std::chrono::duration_cast<std::chrono::seconds>(t).count(),
-              std::chrono::duration_cast<std::chrono::milliseconds>(t).count() %
-                  1000,
-              std::chrono::duration_cast<std::chrono::microseconds>(t).count() %
-                  1000);
-          if (p.has_value() && kPrintDebugGeojson) {
-            fmt::println("{}\n", to_featurecollection(w, p));
-          }
-
+        fmt::println(
+            "{:10}: {:11} --> {:11} | {} | time: "
+            "{}:{:0>3}:{:0>3} s",
+            name, w.node_to_osm_[from_node], w.node_to_osm_[to_node],
+            p ? fmt::format("cost: {:5} | dist: {:>10.2f}", p->cost_, p->dist_)
+              : "no result",
+            std::chrono::duration_cast<std::chrono::seconds>(t).count(),
+            std::chrono::duration_cast<std::chrono::milliseconds>(t).count() %
+                1000,
+            std::chrono::duration_cast<std::chrono::microseconds>(t).count() %
+                1000);
+        if (p.has_value() && kPrintDebugGeojson) {
+          fmt::println("{}\n", to_featurecollection(w, p));
+        }
       };
       print_result("dijkstra", reference, reference_time);
-      if( !astar_pass){print_result("a* bidir", experiment, experiment_time);}
-      if( !cch_pass){ print_result("cch", cch_experiment, cch_experiment_time);}
+      if (!astar_pass) {
+        print_result("a* bidir", experiment, experiment_time);
+      }
+      if (!cch_pass) {
+        print_result("cch", cch_experiment, cch_experiment_time);
+      }
     }
 
     if (!from_matches.empty() && !to_matches.empty()) {
@@ -239,24 +247,29 @@ void cch_run(ways const& w,
 
   if (non_empty_cch == non_empty_samples) {
     auto const dijkstra_total_time = static_cast<double>(
-      std::reduce(begin(reference_times), end(reference_times)).count()
-    );
+        std::reduce(begin(reference_times), end(reference_times)).count());
     auto const astar_total_time = static_cast<double>(
-      std::reduce(begin(experiment_times), end(experiment_times)).count()
-    );
+        std::reduce(begin(experiment_times), end(experiment_times)).count());
     auto const cch_total_time = static_cast<double>(
-      std::reduce(begin(cch_experiment_times), end(cch_experiment_times)).count()
-    );
+        std::reduce(begin(cch_experiment_times), end(cch_experiment_times))
+            .count());
 
-    fmt::println(  "speedup a* vs dijkstra on non-empty: {:.2f}", dijkstra_total_time / astar_total_time);
-    fmt::println(  "speedup cch vs dijkstra on non-epty: {:.2f}", dijkstra_total_time / cch_total_time);
-    fmt::println(  "speedup cch vs a* on non-empty: {:.2f}", astar_total_time / cch_total_time);
+    fmt::println("speedup a* vs dijkstra on non-empty: {:.2f}",
+                 dijkstra_total_time / astar_total_time);
+    fmt::println("speedup cch vs dijkstra on non-epty: {:.2f}",
+                 dijkstra_total_time / cch_total_time);
+    fmt::println("speedup cch vs a* on non-empty: {:.2f}",
+                 astar_total_time / cch_total_time);
 
     if constexpr (!kUseMultithreading) {
-      auto const warmup_hit = *std::max_element(begin(cch_experiment_times), end(cch_experiment_times));
-      auto const cch_total_time_warm = cch_total_time - static_cast<double>(warmup_hit.count());
-      fmt::println(  "speedup WARM cch vs dijkstra on non-epty: {:.2f}", dijkstra_total_time / cch_total_time_warm);
-      fmt::println(  "speedup WARM cch vs a* on non-empty: {:.2f}", astar_total_time / cch_total_time_warm);
+      auto const warmup_hit = *std::max_element(begin(cch_experiment_times),
+                                                end(cch_experiment_times));
+      auto const cch_total_time_warm =
+          cch_total_time - static_cast<double>(warmup_hit.count());
+      fmt::println("speedup WARM cch vs dijkstra on non-epty: {:.2f}",
+                   dijkstra_total_time / cch_total_time_warm);
+      fmt::println("speedup WARM cch vs a* on non-empty: {:.2f}",
+                   astar_total_time / cch_total_time_warm);
     }
   }
 }
@@ -444,7 +457,7 @@ TEST(CCH_dijkstra_astarbidir, DISABLED_switzerland_bus) {
 TEST(CCH_dijkstra_astarbidir, DISABLED_switzerland_bwd) {
   auto const raw_data = "test/switzerland.osm.pbf";
   auto const data_dir = "test/switzerland";
-  auto const num_samples = 1000U; 
+  auto const num_samples = 1000U;
   auto const max_cost = 5 * 3600U;
   auto constexpr dir = direction::kBackward;
 

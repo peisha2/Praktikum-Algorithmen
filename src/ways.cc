@@ -130,8 +130,8 @@ void ways::build_components_and_importance() {
       v_head.push_back(b.v_);
     }
   }
-  auto const thread_count = std::max(static_cast<unsigned>(1),
-                                     std::thread::hardware_concurrency());
+  auto const thread_count =
+      std::max(1, static_cast<int>(std::thread::hardware_concurrency()));
   ifc::run_inertial_flow_cutter(
       thread_count, static_cast<int>(n_nodes()), v_head, v_tail,
       [&](int i) {
