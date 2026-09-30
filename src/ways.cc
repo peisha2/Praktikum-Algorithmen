@@ -14,6 +14,10 @@
 #include "inertialflowcutter/run.h"
 #endif
 
+#if __has_include(<valgrind/valgrind.h>)
+#include <valgrind/valgrind.h>
+#endif
+
 namespace osr {
 
 namespace {
@@ -119,6 +123,12 @@ void ways::build_components_and_importance() {
   r_->way_importance_.clear();
 
 #ifdef USE_INERTIAL_FLOW_CUT
+#ifdef RUNNING_ON_VALGRIND  // skip IFC on Valgrind
+  if (RUNNING_ON_VALGRIND) {
+    return;
+  }
+#endif
+
   pt->status("Run inertial flow cutter").in_high(n_ways()).out_bounds(90, 91);
 
   auto v_tail = std::vector<unsigned>{};
